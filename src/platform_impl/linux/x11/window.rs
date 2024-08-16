@@ -364,7 +364,7 @@ impl UnownedWindow {
         }
 
         if let Some(t) = window_attrs.platform_specific.x11.modal_owner {
-            window.set_modal(t)?;
+            window.set_modal_raw(t)?;
         }
 
         {
@@ -581,8 +581,7 @@ impl UnownedWindow {
         Ok(())
     }
 
-    pub(super) fn set_modal(&self, owner_window: u32) -> Result<(), RootOsError> {
-
+    pub fn set_modal_raw(&self, owner_window: xproto::Window) -> Result<(), RootOsError> {
         let atoms = self.xconn.atoms();
 
         leap!(leap!(self.xconn.change_property(
@@ -603,6 +602,10 @@ impl UnownedWindow {
         .check());
 
         Ok(())
+    }
+
+    pub fn set_modal(&self, owner_window: &Self) -> Result<(), RootOsError> {
+        self.set_modal_raw(owner_window.xwindow)
     }
 
     pub(super) fn shared_state_lock(&self) -> MutexGuard<'_, SharedState> {

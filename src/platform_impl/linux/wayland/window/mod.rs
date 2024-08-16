@@ -341,6 +341,12 @@ impl Window {
     }
 
     #[inline]
+    pub fn set_modal(&self, _owner_window: &Self) -> Result<(), RootOsError> {
+        //TODO support modal
+        Ok(())
+    }
+
+    #[inline]
     pub fn has_focus(&self) -> bool {
         self.window_state.lock().unwrap().has_focus()
     }

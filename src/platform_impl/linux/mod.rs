@@ -327,6 +327,24 @@ impl Window {
     }
 
     #[inline]
+    pub fn set_modal(&self, owner: &Window) -> Result<(), RootOsError> {
+        match self {
+            Window::X(s) => {
+                match owner {
+                    Window::X(o) => s.set_modal(o),
+                    Window::Wayland(_) => unreachable!("unsupported"),
+                }
+            }
+            Window::Wayland(s) => {
+                match owner {
+                    Window::X(_) => unreachable!("unsupported"),
+                    Window::Wayland(o) => s.set_modal(o),
+                }
+            }
+        }
+    }
+
+    #[inline]
     pub fn set_blur(&self, blur: bool) {
         x11_or_wayland!(match self; Window(w) => w.set_blur(blur));
     }

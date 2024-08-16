@@ -760,6 +760,10 @@ impl Window {
         self.window.maybe_queue_on_main(move |w| w.set_outer_position(position))
     }
 
+    pub fn set_modal(&self, owner: &Self) {
+        let _ = self.window.maybe_wait_on_main(move |w| w.set_modal(&owner.window));
+    }
+
     /// Returns the physical size of the window's client area.
     ///
     /// The client area is the content of the window, excluding the title bar and borders.
