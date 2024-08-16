@@ -11,8 +11,10 @@ pub use crate::icon::{BadIcon, Icon};
 
 #[doc(inline)]
 pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
+use rwh_06::RawWindowHandle;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+use x11rb::protocol::xproto;
 
 /// Represents a window.
 ///
@@ -479,6 +481,22 @@ impl WindowAttributes {
         self.parent_window = parent_window.map(SendSyncRawWindowHandle);
         self
     }
+
+    #[inline]
+    pub unsafe fn with_modal(
+        mut self,
+        owner: Option<RawWindowHandle>,
+    ) -> Self {
+        self.platform_specific.x11.modal_owner = owner.map(|e| {
+            match e {
+                RawWindowHandle::Xlib(x) => x.window as xproto::Window,
+                RawWindowHandle::Xcb(x) => x.window.get() as xproto::Window,
+                _ => unreachable!("Invalid raw window handle {e:?} on X11"),
+            }
+        });
+        self
+    }
+
 }
 
 /// Base Window functions.

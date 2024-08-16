@@ -10,7 +10,7 @@ use x11rb::connection::Connection;
 use x11rb::properties::{WmHints, WmSizeHints, WmSizeHintsSpecification};
 use x11rb::protocol::shape::SK;
 use x11rb::protocol::xfixes::{ConnectionExt, RegionWrapper};
-use x11rb::protocol::xproto::{self, ConnectionExt as _, Rectangle};
+use x11rb::protocol::xproto::{self, AtomEnum, ConnectionExt as _, Rectangle};
 use x11rb::protocol::{randr, xinput};
 
 use crate::cursor::{Cursor, CustomCursor as RootCustomCursor};
@@ -363,6 +363,10 @@ impl UnownedWindow {
             window.embed_window()?;
         }
 
+        if let Some(t) = window_attrs.platform_specific.x11.modal_owner {
+            window.set_modal(t)?;
+        }
+
         {
             // Enable drag and drop (TODO: extend API to make this toggleable)
             {
@@ -571,6 +575,30 @@ impl UnownedWindow {
             atoms[_XEMBED],
             xproto::PropMode::REPLACE,
             &[0u32, 1u32],
+        ))
+        .check());
+
+        Ok(())
+    }
+
+    pub(super) fn set_modal(&self, owner_window: u32) -> Result<(), RootOsError> {
+
+        let atoms = self.xconn.atoms();
+
+        leap!(leap!(self.xconn.change_property(
+            self.xwindow,
+            atoms[_NET_WM_STATE],
+            AtomEnum::ATOM.into(),
+            xproto::PropMode::REPLACE,
+            &[atoms[_NET_WM_STATE_MODAL]],
+        ))
+        .check());
+        leap!(leap!(self.xconn.change_property(
+            self.xwindow,
+            atoms[WM_TRANSIENT_FOR],
+            AtomEnum::WINDOW.into(),
+            xproto::PropMode::REPLACE,
+            &[owner_window],
         ))
         .check());
 

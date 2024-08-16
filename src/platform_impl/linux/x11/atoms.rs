@@ -40,6 +40,7 @@ atom_manager! {
     WM_DELETE_WINDOW,
     WM_PROTOCOLS,
     WM_STATE,
+    WM_TRANSIENT_FOR,
     XIM_SERVERS,
 
     // Assorted ICCCM Atoms
@@ -55,6 +56,7 @@ atom_manager! {
     _NET_WM_STATE_HIDDEN,
     _NET_WM_STATE_MAXIMIZED_HORZ,
     _NET_WM_STATE_MAXIMIZED_VERT,
+    _NET_WM_STATE_MODAL,
     _NET_WM_WINDOW_TYPE,
 
     // Activation atoms.
