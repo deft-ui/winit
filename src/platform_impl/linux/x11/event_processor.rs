@@ -1100,10 +1100,11 @@ impl EventProcessor {
 
         if cursor_moved == Some(true) {
             let position = PhysicalPosition::new(event.event_x, event.event_y);
+            let root_position = PhysicalPosition::new(event.root_x, event.root_y);
 
             let event = Event::WindowEvent {
                 window_id,
-                event: WindowEvent::CursorMoved { device_id, position },
+                event: WindowEvent::CursorMoved { device_id, position, root_position },
             };
             callback(&self.target, event);
         } else if cursor_moved.is_none() {
@@ -1189,6 +1190,7 @@ impl EventProcessor {
 
         if self.window_exists(window) {
             let position = PhysicalPosition::new(event.event_x, event.event_y);
+            let root_position = PhysicalPosition::new(event.root_x, event.root_y);
 
             let event =
                 Event::WindowEvent { window_id, event: WindowEvent::CursorEntered { device_id } };
@@ -1196,7 +1198,7 @@ impl EventProcessor {
 
             let event = Event::WindowEvent {
                 window_id,
-                event: WindowEvent::CursorMoved { device_id, position },
+                event: WindowEvent::CursorMoved { device_id, position, root_position },
             };
             callback(&self.target, event);
         }
@@ -1249,6 +1251,7 @@ impl EventProcessor {
 
         let window_id = mkwid(window);
         let position = PhysicalPosition::new(xev.event_x, xev.event_y);
+        let root_position = PhysicalPosition::new(xev.root_x, xev.root_y);
 
         if let Some(window) = self.with_window(window, Arc::clone) {
             window.shared_state_lock().has_focus = true;
@@ -1279,7 +1282,7 @@ impl EventProcessor {
 
         let event = Event::WindowEvent {
             window_id,
-            event: WindowEvent::CursorMoved { device_id: mkdid(pointer_id as _), position },
+            event: WindowEvent::CursorMoved { device_id: mkdid(pointer_id as _), position, root_position },
         };
         callback(&self.target, event);
     }
@@ -1354,6 +1357,7 @@ impl EventProcessor {
             let window_id = mkwid(window);
             let id = xev.detail as u64;
             let location = PhysicalPosition::new(xev.event_x, xev.event_y);
+            let root_position = PhysicalPosition::new(xev.root_x, xev.root_y);
 
             // Mouse cursor position changes when touch events are received.
             // Only the first concurrently active touch ID moves the mouse cursor.
@@ -1363,6 +1367,7 @@ impl EventProcessor {
                     event: WindowEvent::CursorMoved {
                         device_id: mkdid(util::VIRTUAL_CORE_POINTER),
                         position: location.cast(),
+                        root_position,
                     },
                 };
                 callback(&self.target, event);

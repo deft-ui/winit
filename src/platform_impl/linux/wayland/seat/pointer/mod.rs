@@ -132,8 +132,13 @@ impl PointerHandler for WinitState {
                     // Set the currently focused surface.
                     pointer.winit_data().inner.lock().unwrap().surface = Some(window_id);
 
+                    //TODO impl root_position
+                    let root_position =PhysicalPosition {
+                        x: 0f64,
+                        y: 0f64,
+                    };
                     self.events_sink.push_window_event(
-                        WindowEvent::CursorMoved { device_id, position },
+                        WindowEvent::CursorMoved { device_id, position, root_position },
                         window_id,
                     );
                 },
@@ -147,8 +152,13 @@ impl PointerHandler for WinitState {
                         .push_window_event(WindowEvent::CursorLeft { device_id }, window_id);
                 },
                 PointerEventKind::Motion { .. } => {
+                    //TODO impl root_position
+                    let root_position =PhysicalPosition {
+                        x: 0f64,
+                        y: 0f64,
+                    };
                     self.events_sink.push_window_event(
-                        WindowEvent::CursorMoved { device_id, position },
+                        WindowEvent::CursorMoved { device_id, position, root_position },
                         window_id,
                     );
                 },

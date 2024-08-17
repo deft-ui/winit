@@ -247,6 +247,8 @@ pub enum WindowEvent {
         /// the OS to implement effects such as cursor acceleration, it should not be used
         /// to implement non-cursor-like interactions such as 3D camera control.
         position: PhysicalPosition<f64>,
+
+        root_position: PhysicalPosition<f64>,
     },
 
     /// The cursor has entered the window.
@@ -1047,7 +1049,7 @@ mod tests {
                 with_window_event(HoveredFile("x.txt".into()));
                 with_window_event(HoveredFileCancelled);
                 with_window_event(Ime(Enabled));
-                with_window_event(CursorMoved { device_id: did, position: (0, 0).into() });
+                with_window_event(CursorMoved { device_id: did, position: (0, 0).into(), root_position: (0, 0).into() });
                 with_window_event(ModifiersChanged(event::Modifiers::default()));
                 with_window_event(CursorEntered { device_id: did });
                 with_window_event(CursorLeft { device_id: did });
