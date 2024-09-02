@@ -14,6 +14,7 @@ pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 use rwh_06::RawWindowHandle;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+#[cfg(x11_platform)]
 use x11rb::protocol::xproto;
 
 /// Represents a window.
@@ -483,6 +484,7 @@ impl WindowAttributes {
     }
 
     #[inline]
+    #[cfg(x11_platform)]
     pub unsafe fn with_modal(
         mut self,
         owner: Option<RawWindowHandle>,
@@ -761,6 +763,8 @@ impl Window {
     }
 
     pub fn set_modal(&self, owner: &Self) {
+        //TODO support other platforms?
+        #[cfg(x11_platform)]
         let _ = self.window.maybe_wait_on_main(move |w| w.set_modal(&owner.window));
     }
 
