@@ -1062,6 +1062,8 @@ impl WinitView {
         self.queue_event(WindowEvent::CursorMoved {
             device_id: DEVICE_ID,
             position: view_point.to_physical(self.scale_factor()),
+            //TODO fix root_position
+            root_position: view_point.to_physical(self.scale_factor()),
         });
     }
 }
