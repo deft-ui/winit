@@ -431,6 +431,7 @@ impl Window {
         let confine = match mode {
             CursorGrabMode::None => false,
             CursorGrabMode::Confined => true,
+            CursorGrabMode::Global => false, //TODO support global grab
             CursorGrabMode::Locked => {
                 return Err(ExternalError::NotSupported(NotSupportedError::new()))
             },

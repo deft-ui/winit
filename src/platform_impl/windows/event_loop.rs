@@ -59,9 +59,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 
 use crate::dpi::{PhysicalPosition, PhysicalSize};
 use crate::error::EventLoopError;
-use crate::event::{
-    DeviceEvent, Event, Force, Ime, InnerSizeWriter, RawKeyEvent, Touch, TouchPhase, WindowEvent,
-};
+use crate::event::{DeviceEvent, Event, Force, Ime, InnerSizeWriter, RawKeyEvent, Touch, TouchPhase, WindowEvent};
 use crate::event_loop::{ActiveEventLoop as RootAEL, ControlFlow, DeviceEvents, EventLoopClosed};
 use crate::keyboard::ModifiersState;
 use crate::platform::pump_events::PumpStatus;
@@ -84,7 +82,7 @@ use crate::window::{
     CustomCursor as RootCustomCursor, CustomCursorSource, Theme, WindowId as RootWindowId,
 };
 use runner::{EventLoopRunner, EventLoopRunnerShared};
-
+use crate::platform_impl::DeviceId;
 use super::window::set_skip_taskbar;
 use super::SelectedCursor;
 
@@ -510,6 +508,11 @@ impl ActiveEventLoop {
     #[inline(always)]
     pub(crate) fn create_thread_executor(&self) -> EventLoopThreadExecutor {
         EventLoopThreadExecutor { thread_id: self.thread_id, target_window: self.thread_msg_target }
+    }
+
+    pub fn query_pointer(&self, device_id: DeviceId) -> Option<(f32, f32)> {
+        //TODO impl query pointer
+        None
     }
 
     pub fn create_custom_cursor(&self, source: CustomCursorSource) -> RootCustomCursor {
