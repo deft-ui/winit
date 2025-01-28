@@ -710,6 +710,10 @@ impl ActiveEventLoop {
         self.exit.get()
     }
 
+    pub fn query_pointer(&self, device_id: DeviceId) -> Option<(f32, f32)> {
+        None
+    }
+
     pub(crate) fn owned_display_handle(&self) -> OwnedDisplayHandle {
         OwnedDisplayHandle
     }

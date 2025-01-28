@@ -1736,6 +1736,8 @@ pub enum CursorGrabMode {
     ///   now.
     /// - **iOS / Android:** Always returns an [`ExternalError::NotSupported`].
     Locked,
+
+    Global,
 }
 
 /// Defines the orientation that a window resize will be performed.

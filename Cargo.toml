@@ -1,6 +1,6 @@
 [package]
-name = "winit"
-version = "0.30.5"
+name = "deft-winit"
+version = "0.30.6"
 authors = [
     "The winit contributors",
     "Pierre Krieger <pierre.krieger1708@gmail.com>",
@@ -92,7 +92,7 @@ tracing = { version = "0.1.40", default-features = false }
 image = { version = "0.25.0", default-features = false, features = ["png"] }
 tracing = { version = "0.1.40", default-features = false, features = ["log"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-winit = { path = ".", features = ["rwh_05"] }
+winit = { path = ".", features = ["rwh_05"], package = "deft-winit" }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dev-dependencies]
 softbuffer = { version = "0.4.0", default-features = false, features = [

@@ -1594,9 +1594,11 @@ unsafe fn public_window_callback_inner(
             if cursor_moved {
                 update_modifiers(window, userdata);
 
+                //TODO fix root position
+                let root_position = position;
                 userdata.send_event(Event::WindowEvent {
                     window_id: RootWindowId(WindowId(window)),
-                    event: CursorMoved { device_id: DEVICE_ID, position },
+                    event: CursorMoved { device_id: DEVICE_ID, position, root_position },
                 });
             }
 

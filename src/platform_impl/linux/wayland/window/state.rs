@@ -832,7 +832,7 @@ impl WindowState {
 
         match old_mode {
             CursorGrabMode::None => (),
-            CursorGrabMode::Confined => self.apply_on_pointer(|_, data| {
+            CursorGrabMode::Confined | CursorGrabMode::Global => self.apply_on_pointer(|_, data| {
                 data.unconfine_pointer();
             }),
             CursorGrabMode::Locked => {
@@ -850,6 +850,9 @@ impl WindowState {
                 let pointer = pointer.pointer();
                 data.confine_pointer(pointer_constraints, surface, pointer, &self.queue_handle)
             }),
+            CursorGrabMode::Global => {
+                todo!()
+            }
             CursorGrabMode::None => {
                 // Current lock/confine was already removed.
             },

@@ -931,6 +931,21 @@ impl ActiveEventLoop {
         x11_or_wayland!(match self; Self(evlp) => evlp.raw_display_handle_rwh_06())
     }
 
+    #[inline]
+    pub fn query_pointer(&self, device_id: DeviceId) -> Option<(f32, f32)> {
+        match self {
+            ActiveEventLoop::Wayland(_ael) => {todo!()}
+            ActiveEventLoop::X(ael) => {
+                match device_id {
+                    DeviceId::X(d) => {
+                        ael.query_pointer(d)
+                    }
+                    DeviceId::Wayland(_) => unreachable!()
+                }
+            }
+        }
+    }
+
     pub(crate) fn set_control_flow(&self, control_flow: ControlFlow) {
         x11_or_wayland!(match self; Self(evlp) => evlp.set_control_flow(control_flow))
     }

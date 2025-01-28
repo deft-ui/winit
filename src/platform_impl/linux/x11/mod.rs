@@ -31,9 +31,7 @@ use crate::event_loop::{ActiveEventLoop as RootAEL, ControlFlow, DeviceEvents, E
 use crate::platform::pump_events::PumpStatus;
 use crate::platform_impl::common::xkb::Context;
 use crate::platform_impl::platform::{min_timeout, WindowId};
-use crate::platform_impl::{
-    ActiveEventLoop as PlatformActiveEventLoop, OsError, PlatformCustomCursor,
-};
+use crate::platform_impl::{x11, ActiveEventLoop as PlatformActiveEventLoop, OsError, PlatformCustomCursor};
 use crate::window::{CustomCursor as RootCustomCursor, CustomCursorSource, WindowAttributes};
 
 mod activation;
@@ -692,6 +690,12 @@ impl ActiveEventLoop {
             self.xconn.default_screen_index() as c_int,
         );
         Ok(display_handle.into())
+    }
+
+    pub fn query_pointer(&self, device_id: DeviceId) -> Option<(f32, f32)> {
+        self.xconn.query_pointer(self.root, device_id.0).ok().map(|ret| {
+            (xinput_fp1616_to_float(ret.win_x) as f32, xinput_fp1616_to_float(ret.win_y) as f32)
+        })
     }
 
     pub(crate) fn set_control_flow(&self, control_flow: ControlFlow) {

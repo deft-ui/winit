@@ -10,9 +10,8 @@ use x11rb::connection::Connection;
 use x11rb::properties::{WmHints, WmSizeHints, WmSizeHintsSpecification};
 use x11rb::protocol::shape::SK;
 use x11rb::protocol::xfixes::{ConnectionExt, RegionWrapper};
-use x11rb::protocol::xproto::{self, AtomEnum, ConnectionExt as _, Rectangle};
+use x11rb::protocol::xproto::{self, AtomEnum, ConnectionExt as _, Rectangle, Window};
 use x11rb::protocol::{randr, xinput};
-
 use crate::cursor::{Cursor, CustomCursor as RootCustomCursor};
 use crate::dpi::{PhysicalPosition, PhysicalSize, Position, Size};
 use crate::error::{ExternalError, NotSupportedError, OsError as RootOsError};
@@ -20,9 +19,7 @@ use crate::event::{Event, InnerSizeWriter, WindowEvent};
 use crate::event_loop::AsyncRequestSerial;
 use crate::platform::x11::WindowType;
 use crate::platform_impl::x11::atoms::*;
-use crate::platform_impl::x11::{
-    xinput_fp1616_to_float, MonitorHandle as X11MonitorHandle, WakeSender, X11Error,
-};
+use crate::platform_impl::x11::{xinput_fp1616_to_float, DeviceId, MonitorHandle as X11MonitorHandle, WakeSender, X11Error};
 use crate::platform_impl::{
     Fullscreen, MonitorHandle as PlatformMonitorHandle, OsError, PlatformCustomCursor,
     PlatformIcon, VideoModeHandle as PlatformVideoModeHandle,
@@ -1534,53 +1531,11 @@ impl UnownedWindow {
                 ExternalError::Os(os_error!(OsError::XError(X11Error::Xlib(err).into())))
             }),
             CursorGrabMode::Confined => {
-                let result = {
-                    self.xconn
-                        .xcb_connection()
-                        .grab_pointer(
-                            true as _,
-                            self.xwindow,
-                            xproto::EventMask::BUTTON_PRESS
-                                | xproto::EventMask::BUTTON_RELEASE
-                                | xproto::EventMask::ENTER_WINDOW
-                                | xproto::EventMask::LEAVE_WINDOW
-                                | xproto::EventMask::POINTER_MOTION
-                                | xproto::EventMask::POINTER_MOTION_HINT
-                                | xproto::EventMask::BUTTON1_MOTION
-                                | xproto::EventMask::BUTTON2_MOTION
-                                | xproto::EventMask::BUTTON3_MOTION
-                                | xproto::EventMask::BUTTON4_MOTION
-                                | xproto::EventMask::BUTTON5_MOTION
-                                | xproto::EventMask::KEYMAP_STATE,
-                            xproto::GrabMode::ASYNC,
-                            xproto::GrabMode::ASYNC,
-                            self.xwindow,
-                            0u32,
-                            x11rb::CURRENT_TIME,
-                        )
-                        .expect("Failed to call `grab_pointer`")
-                        .reply()
-                        .expect("Failed to receive reply from `grab_pointer`")
-                };
-
-                match result.status {
-                    xproto::GrabStatus::SUCCESS => Ok(()),
-                    xproto::GrabStatus::ALREADY_GRABBED => {
-                        Err("Cursor could not be confined: already confined by another client")
-                    },
-                    xproto::GrabStatus::INVALID_TIME => {
-                        Err("Cursor could not be confined: invalid time")
-                    },
-                    xproto::GrabStatus::NOT_VIEWABLE => {
-                        Err("Cursor could not be confined: confine location not viewable")
-                    },
-                    xproto::GrabStatus::FROZEN => {
-                        Err("Cursor could not be confined: frozen by another client")
-                    },
-                    _ => unreachable!(),
-                }
-                .map_err(|err| ExternalError::Os(os_error!(OsError::Misc(err))))
+                self.grab_cursor(self.xwindow)
             },
+            CursorGrabMode::Global => {
+                self.grab_cursor(0u32)
+            }
             CursorGrabMode::Locked => {
                 return Err(ExternalError::NotSupported(NotSupportedError::new()));
             },
@@ -1591,6 +1546,55 @@ impl UnownedWindow {
         }
 
         result
+    }
+
+    fn grab_cursor<A: Into<Window>>(&self, confine_to: A) -> Result<(), ExternalError>  {
+        let result = {
+            self.xconn
+                .xcb_connection()
+                .grab_pointer(
+                    true as _,
+                    self.root,
+                    xproto::EventMask::BUTTON_PRESS
+                        | xproto::EventMask::BUTTON_RELEASE
+                        | xproto::EventMask::ENTER_WINDOW
+                        | xproto::EventMask::LEAVE_WINDOW
+                        | xproto::EventMask::POINTER_MOTION
+                        | xproto::EventMask::POINTER_MOTION_HINT
+                        | xproto::EventMask::BUTTON1_MOTION
+                        | xproto::EventMask::BUTTON2_MOTION
+                        | xproto::EventMask::BUTTON3_MOTION
+                        | xproto::EventMask::BUTTON4_MOTION
+                        | xproto::EventMask::BUTTON5_MOTION
+                        | xproto::EventMask::KEYMAP_STATE,
+                    xproto::GrabMode::ASYNC,
+                    xproto::GrabMode::ASYNC,
+                    confine_to,
+                    0u32,
+                    x11rb::CURRENT_TIME,
+                )
+                .expect("Failed to call `grab_pointer`")
+                .reply()
+                .expect("Failed to receive reply from `grab_pointer`")
+        };
+
+        match result.status {
+            xproto::GrabStatus::SUCCESS => Ok(()),
+            xproto::GrabStatus::ALREADY_GRABBED => {
+                Err("Cursor could not be confined: already confined by another client")
+            },
+            xproto::GrabStatus::INVALID_TIME => {
+                Err("Cursor could not be confined: invalid time")
+            },
+            xproto::GrabStatus::NOT_VIEWABLE => {
+                Err("Cursor could not be confined: confine location not viewable")
+            },
+            xproto::GrabStatus::FROZEN => {
+                Err("Cursor could not be confined: frozen by another client")
+            },
+            _ => unreachable!(),
+        }
+            .map_err(|err| ExternalError::Os(os_error!(OsError::Misc(err))))
     }
 
     #[inline]

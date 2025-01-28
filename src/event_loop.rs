@@ -20,7 +20,7 @@ use web_time::{Duration, Instant};
 
 use crate::application::ApplicationHandler;
 use crate::error::{EventLoopError, OsError};
-use crate::event::Event;
+use crate::event::{DeviceId, Event};
 use crate::monitor::MonitorHandle;
 use crate::platform_impl;
 use crate::window::{CustomCursor, CustomCursorSource, Theme, Window, WindowAttributes};
@@ -480,6 +480,11 @@ impl ActiveEventLoop {
     pub fn owned_display_handle(&self) -> OwnedDisplayHandle {
         OwnedDisplayHandle { platform: self.p.owned_display_handle() }
     }
+
+    pub fn query_pointer(&self, device_id: DeviceId) -> Option<(f32, f32)> {
+        self.p.query_pointer(device_id.0)
+    }
+
 }
 
 #[cfg(feature = "rwh_06")]
