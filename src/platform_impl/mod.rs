@@ -16,6 +16,9 @@ mod web;
 #[cfg(windows_platform)]
 mod windows;
 
+#[cfg(ohos_platform)]
+mod ohos;
+
 #[cfg(android_platform)]
 use android as platform;
 #[cfg(ios_platform)]
@@ -30,6 +33,8 @@ use orbital as platform;
 use web as platform;
 #[cfg(windows_platform)]
 use windows as platform;
+#[cfg(ohos_platform)]
+use self::ohos as platform;
 
 pub use self::platform::*;
 
@@ -74,5 +79,6 @@ impl From<Fullscreen> for RootFullscreen {
     not(wayland_platform),
     not(web_platform),
     not(orbital_platform),
+    not(ohos_platform),
 ))]
 compile_error!("The platform you're compiling for is not supported by winit");
