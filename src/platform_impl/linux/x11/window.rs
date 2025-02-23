@@ -141,12 +141,26 @@ impl UnownedWindow {
     ) -> Result<UnownedWindow, RootOsError> {
         let xconn = &event_loop.xconn;
         let atoms = xconn.atoms();
+
+        let screen_id = match window_attrs.platform_specific.x11.screen_id {
+            Some(id) => id,
+            None => xconn.default_screen_index() as c_int,
+        };
+
+        let screen = {
+            let screen_id_usize = usize::try_from(screen_id)
+                .map_err(|_| os_error!(OsError::Misc("screen id must be non-negative")))?;
+            xconn.xcb_connection().setup().roots.get(screen_id_usize).ok_or(os_error!(
+                OsError::Misc("requested screen id not present in server's response")
+            ))?
+        };
+
         #[cfg(feature = "rwh_06")]
         let root = match window_attrs.parent_window.as_ref().map(|handle| handle.0) {
             Some(rwh_06::RawWindowHandle::Xlib(handle)) => handle.window as xproto::Window,
             Some(rwh_06::RawWindowHandle::Xcb(handle)) => handle.window.get(),
             Some(raw) => unreachable!("Invalid raw window handle {raw:?} on X11"),
-            None => event_loop.root,
+            None => screen.root,
         };
         #[cfg(not(feature = "rwh_06"))]
         let root = event_loop.root;
@@ -204,18 +218,10 @@ impl UnownedWindow {
             dimensions
         };
 
-        let screen_id = match window_attrs.platform_specific.x11.screen_id {
-            Some(id) => id,
-            None => xconn.default_screen_index() as c_int,
-        };
-
-        // An iterator over all of the visuals combined with their depths.
-        let mut all_visuals = xconn
-            .xcb_connection()
-            .setup()
-            .roots
+        // An iterator over the visuals matching screen id combined with their depths.
+        let mut all_visuals = screen
+            .allowed_depths
             .iter()
-            .flat_map(|root| &root.allowed_depths)
             .flat_map(|depth| depth.visuals.iter().map(move |visual| (visual, depth.depth)));
 
         // creating
@@ -485,6 +491,20 @@ impl UnownedWindow {
             );
             leap!(result).ignore_error();
 
+            // Select XInput2 events
+            let mask = xinput::XIEventMask::MOTION
+                | xinput::XIEventMask::BUTTON_PRESS
+                | xinput::XIEventMask::BUTTON_RELEASE
+                | xinput::XIEventMask::ENTER
+                | xinput::XIEventMask::LEAVE
+                | xinput::XIEventMask::FOCUS_IN
+                | xinput::XIEventMask::FOCUS_OUT
+                | xinput::XIEventMask::TOUCH_BEGIN
+                | xinput::XIEventMask::TOUCH_UPDATE
+                | xinput::XIEventMask::TOUCH_END;
+            leap!(xconn.select_xinput_events(window.xwindow, super::ALL_MASTER_DEVICES, mask))
+                .ignore_error();
+
             // Set visibility (map window)
             if window_attrs.visible {
                 leap!(xconn.xcb_connection().map_window(window.xwindow)).ignore_error();
@@ -507,20 +527,6 @@ impl UnownedWindow {
                     return Err(os_error!(OsError::Misc("`XkbSetDetectableAutoRepeat` failed")));
                 }
             }
-
-            // Select XInput2 events
-            let mask = xinput::XIEventMask::MOTION
-                | xinput::XIEventMask::BUTTON_PRESS
-                | xinput::XIEventMask::BUTTON_RELEASE
-                | xinput::XIEventMask::ENTER
-                | xinput::XIEventMask::LEAVE
-                | xinput::XIEventMask::FOCUS_IN
-                | xinput::XIEventMask::FOCUS_OUT
-                | xinput::XIEventMask::TOUCH_BEGIN
-                | xinput::XIEventMask::TOUCH_UPDATE
-                | xinput::XIEventMask::TOUCH_END;
-            leap!(xconn.select_xinput_events(window.xwindow, super::ALL_MASTER_DEVICES, mask))
-                .ignore_error();
 
             // Try to create input context for the window.
             if let Some(ime) = event_loop.ime.as_ref() {
@@ -554,7 +560,7 @@ impl UnownedWindow {
 
         // Remove the startup notification if we have one.
         if let Some(startup) = window_attrs.platform_specific.activation_token.as_ref() {
-            leap!(xconn.remove_activation_token(xwindow, &startup._token));
+            leap!(xconn.remove_activation_token(xwindow, &startup.token));
         }
 
         // We never want to give the user a broken window, since by then, it's too late to handle.
@@ -1514,6 +1520,11 @@ impl UnownedWindow {
 
     #[inline]
     pub fn set_cursor_grab(&self, mode: CursorGrabMode) -> Result<(), ExternalError> {
+        // We don't support the locked cursor yet, so ignore it early on.
+        if mode == CursorGrabMode::Locked {
+            return Err(ExternalError::NotSupported(NotSupportedError::new()));
+        }
+
         let mut grabbed_lock = self.cursor_grabbed_mode.lock().unwrap();
         if mode == *grabbed_lock {
             return Ok(());
@@ -1525,6 +1536,7 @@ impl UnownedWindow {
             .xcb_connection()
             .ungrab_pointer(x11rb::CURRENT_TIME)
             .expect_then_ignore_error("Failed to call `xcb_ungrab_pointer`");
+        *grabbed_lock = CursorGrabMode::None;
 
         let result = match mode {
             CursorGrabMode::None => self.xconn.flush_requests().map_err(|err| {

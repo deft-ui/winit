@@ -529,7 +529,7 @@ impl<T: 'static> EventLoop<T> {
                         window_id: crate::window::WindowId(window_id),
                         event: WindowEvent::ActivationTokenDone {
                             serial,
-                            token: crate::window::ActivationToken::_new(token),
+                            token: crate::window::ActivationToken::from_raw(token),
                         },
                     };
                     callback(event, &self.event_processor.target)
@@ -755,14 +755,14 @@ impl<'a> DeviceInfo<'a> {
     }
 }
 
-impl<'a> Drop for DeviceInfo<'a> {
+impl Drop for DeviceInfo<'_> {
     fn drop(&mut self) {
         assert!(!self.info.is_null());
         unsafe { (self.xconn.xinput2.XIFreeDeviceInfo)(self.info as *mut _) };
     }
 }
 
-impl<'a> Deref for DeviceInfo<'a> {
+impl Deref for DeviceInfo<'_> {
     type Target = [ffi::XIDeviceInfo];
 
     fn deref(&self) -> &Self::Target {
@@ -961,7 +961,7 @@ trait CookieResultExt {
     fn expect_then_ignore_error(self, msg: &str);
 }
 
-impl<'a, E: fmt::Debug> CookieResultExt for Result<VoidCookie<'a>, E> {
+impl<E: fmt::Debug> CookieResultExt for Result<VoidCookie<'_>, E> {
     fn expect_then_ignore_error(self, msg: &str) {
         self.expect(msg).ignore_error()
     }
