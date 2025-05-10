@@ -26,12 +26,13 @@ use super::event::dummy_event;
 use super::monitor::{self, MonitorHandle};
 use super::observer::setup_control_flow_observers;
 use crate::error::EventLoopError;
-use crate::event::Event;
+use crate::event::{Event};
 use crate::event_loop::{
     ActiveEventLoop as RootWindowTarget, ControlFlow, DeviceEvents, EventLoopClosed,
 };
 use crate::platform::macos::ActivationPolicy;
 use crate::platform::pump_events::PumpStatus;
+use crate::platform_impl::DeviceId;
 use crate::platform_impl::platform::cursor::CustomCursor;
 use crate::window::{CustomCursor as RootCustomCursor, CustomCursorSource, Theme};
 
@@ -164,6 +165,13 @@ impl ActiveEventLoop {
     pub(crate) fn allows_automatic_window_tabbing(&self) -> bool {
         NSWindow::allowsAutomaticWindowTabbing(self.mtm)
     }
+
+    pub fn query_pointer(&self, _device_id: DeviceId) -> Option<(f32, f32)> {
+        //TODO impl
+        None
+    }
+
+
 }
 
 fn map_user_event<T: 'static>(

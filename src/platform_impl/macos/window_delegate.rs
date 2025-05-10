@@ -1121,6 +1121,10 @@ impl WindowDelegate {
             CursorGrabMode::Confined => {
                 return Err(ExternalError::NotSupported(NotSupportedError::new()))
             },
+            CursorGrabMode::Global => {
+                //TODO impl
+                return Err(ExternalError::NotSupported(NotSupportedError::new()))
+            }
         };
 
         // TODO: Do this for real https://stackoverflow.com/a/40922095/5435443

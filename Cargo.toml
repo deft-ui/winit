@@ -1,6 +1,6 @@
 [package]
 name = "deft-winit"
-version = "0.31.0"
+version = "0.31.1"
 authors = [
     "The winit contributors",
     "Pierre Krieger <pierre.krieger1708@gmail.com>",

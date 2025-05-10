@@ -5,11 +5,11 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use std::time::Duration;
 
-    use winit::application::ApplicationHandler;
-    use winit::event::WindowEvent;
-    use winit::event_loop::{ActiveEventLoop, EventLoop};
-    use winit::platform::run_on_demand::EventLoopExtRunOnDemand;
-    use winit::window::{Window, WindowId};
+    use deft_winit::application::ApplicationHandler;
+    use deft_winit::event::WindowEvent;
+    use deft_winit::event_loop::{ActiveEventLoop, EventLoop};
+    use deft_winit::platform::run_on_demand::EventLoopExtRunOnDemand;
+    use deft_winit::window::{Window, WindowId};
 
     #[path = "util/fill.rs"]
     mod fill;

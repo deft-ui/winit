@@ -8,11 +8,11 @@ use ::tracing::{info, warn};
 #[cfg(web_platform)]
 use web_time as time;
 
-use winit::application::ApplicationHandler;
-use winit::event::{ElementState, KeyEvent, StartCause, WindowEvent};
-use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
-use winit::keyboard::{Key, NamedKey};
-use winit::window::{Window, WindowId};
+use deft_winit::application::ApplicationHandler;
+use deft_winit::event::{ElementState, KeyEvent, StartCause, WindowEvent};
+use deft_winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use deft_winit::keyboard::{Key, NamedKey};
+use deft_winit::window::{Window, WindowId};
 
 #[path = "util/fill.rs"]
 mod fill;

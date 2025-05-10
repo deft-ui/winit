@@ -3,11 +3,11 @@ use std::error::Error;
 
 #[cfg(x11_platform)]
 fn main() -> Result<(), Box<dyn Error>> {
-    use winit::application::ApplicationHandler;
-    use winit::event::WindowEvent;
-    use winit::event_loop::{ActiveEventLoop, EventLoop};
-    use winit::platform::x11::WindowAttributesExtX11;
-    use winit::window::{Window, WindowId};
+    use deft_winit::application::ApplicationHandler;
+    use deft_winit::event::WindowEvent;
+    use deft_winit::event_loop::{ActiveEventLoop, EventLoop};
+    use deft_winit::platform::x11::WindowAttributesExtX11;
+    use deft_winit::window::{Window, WindowId};
 
     #[path = "util/fill.rs"]
     mod fill;
