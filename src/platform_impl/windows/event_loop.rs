@@ -452,8 +452,15 @@ impl ActiveEventLoop {
     }
 
     pub fn query_pointer(&self, device_id: DeviceId) -> Option<(f32, f32)> {
-        //TODO impl query pointer
-        None
+        unsafe {
+            let mut point = POINT {
+                x: 0,
+                y: 0,
+            };
+
+            GetCursorPos(&mut point);
+            Some((point.x as f32, point.y as f32))
+        }
     }
 
     pub fn create_custom_cursor(&self, source: CustomCursorSource) -> RootCustomCursor {
