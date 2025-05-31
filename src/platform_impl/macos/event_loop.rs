@@ -14,6 +14,8 @@ use core_foundation::runloop::{
     kCFRunLoopCommonModes, CFRunLoopAddSource, CFRunLoopGetMain, CFRunLoopSourceContext,
     CFRunLoopSourceCreate, CFRunLoopSourceRef, CFRunLoopSourceSignal, CFRunLoopWakeUp,
 };
+use core_graphics::event::CGEvent;
+use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 use objc2::rc::{autoreleasepool, Retained};
 use objc2::runtime::ProtocolObject;
 use objc2::{msg_send_id, sel, ClassType};
@@ -167,8 +169,10 @@ impl ActiveEventLoop {
     }
 
     pub fn query_pointer(&self, _device_id: DeviceId) -> Option<(f32, f32)> {
-        //TODO impl
-        None
+        let es = CGEventSource::new(CGEventSourceStateID::Private).ok()?;
+        let event = CGEvent::new(es).ok()?;
+        let loc = event.location();
+        Some((loc.x as f32, loc.y as f32))
     }
 
 

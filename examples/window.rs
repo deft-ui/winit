@@ -482,10 +482,18 @@ impl ApplicationHandler<UserEvent> for Application {
 
     fn device_event(
         &mut self,
-        _event_loop: &ActiveEventLoop,
+        event_loop: &ActiveEventLoop,
         device_id: DeviceId,
         event: DeviceEvent,
     ) {
+        match event_loop.query_pointer(device_id) {
+            Some((x, y)) => {
+                println!("Pointer ({x}, {y})");
+            }
+            None => {
+                println!("Failed to query pointer");
+            }
+        }
         info!("Device {device_id:?} event: {event:?}");
     }
 
