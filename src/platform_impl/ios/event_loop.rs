@@ -92,6 +92,10 @@ impl ActiveEventLoop {
     pub(crate) fn owned_display_handle(&self) -> OwnedDisplayHandle {
         OwnedDisplayHandle
     }
+
+    pub(crate) fn query_pointer(&self, device_id: crate::platform_impl::DeviceId) -> Option<(f32, f32)> {
+        None
+    }
 }
 
 #[derive(Clone)]
