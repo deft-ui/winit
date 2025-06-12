@@ -11,7 +11,6 @@ pub use crate::icon::{BadIcon, Icon};
 
 #[doc(inline)]
 pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
-use rwh_06::RawWindowHandle;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 #[cfg(x11_platform)]
@@ -487,12 +486,12 @@ impl WindowAttributes {
     #[cfg(x11_platform)]
     pub unsafe fn with_modal(
         mut self,
-        owner: Option<RawWindowHandle>,
+        owner: Option<rwh_06::RawWindowHandle>,
     ) -> Self {
         self.platform_specific.x11.modal_owner = owner.map(|e| {
             match e {
-                RawWindowHandle::Xlib(x) => x.window as xproto::Window,
-                RawWindowHandle::Xcb(x) => x.window.get() as xproto::Window,
+                rwh_06::RawWindowHandle::Xlib(x) => x.window as xproto::Window,
+                rwh_06::RawWindowHandle::Xcb(x) => x.window.get() as xproto::Window,
                 _ => unreachable!("Invalid raw window handle {e:?} on X11"),
             }
         });
@@ -633,7 +632,7 @@ impl Window {
     /// APIs and software rendering.
     ///
     /// ```no_run
-    /// # use winit::window::Window;
+    /// # use deft_winit::window::Window;
     /// # fn swap_buffers() {}
     /// # fn scope(window: &Window) {
     /// // Do the actual drawing with OpenGL.
@@ -730,8 +729,8 @@ impl Window {
     /// This automatically un-maximizes the window if it's maximized.
     ///
     /// ```no_run
-    /// # use winit::dpi::{LogicalPosition, PhysicalPosition};
-    /// # use winit::window::Window;
+    /// # use deft_winit::dpi::{LogicalPosition, PhysicalPosition};
+    /// # use deft_winit::window::Window;
     /// # fn scope(window: &Window) {
     /// // Specify the position in logical dimensions like this:
     /// window.set_outer_position(LogicalPosition::new(400.0, 200.0));
@@ -762,6 +761,7 @@ impl Window {
         self.window.maybe_queue_on_main(move |w| w.set_outer_position(position))
     }
 
+    #[allow(unused)]
     pub fn set_modal(&self, owner: &Self) {
         //TODO support other platforms?
         #[cfg(x11_platform)]
@@ -804,8 +804,8 @@ impl Window {
     /// The request could automatically un-maximize the window if it's maximized.
     ///
     /// ```no_run
-    /// # use winit::dpi::{LogicalSize, PhysicalSize};
-    /// # use winit::window::Window;
+    /// # use deft_winit::dpi::{LogicalSize, PhysicalSize};
+    /// # use deft_winit::window::Window;
     /// # fn scope(window: &Window) {
     /// // Specify the size in logical dimensions like this:
     /// let _ = window.request_inner_size(LogicalSize::new(400.0, 200.0));
@@ -853,8 +853,8 @@ impl Window {
     /// Sets a minimum dimension size for the window.
     ///
     /// ```no_run
-    /// # use winit::dpi::{LogicalSize, PhysicalSize};
-    /// # use winit::window::Window;
+    /// # use deft_winit::dpi::{LogicalSize, PhysicalSize};
+    /// # use deft_winit::window::Window;
     /// # fn scope(window: &Window) {
     /// // Specify the size in logical dimensions like this:
     /// window.set_min_inner_size(Some(LogicalSize::new(400.0, 200.0)));
@@ -881,8 +881,8 @@ impl Window {
     /// Sets a maximum dimension size for the window.
     ///
     /// ```no_run
-    /// # use winit::dpi::{LogicalSize, PhysicalSize};
-    /// # use winit::window::Window;
+    /// # use deft_winit::dpi::{LogicalSize, PhysicalSize};
+    /// # use deft_winit::window::Window;
     /// # fn scope(window: &Window) {
     /// // Specify the size in logical dimensions like this:
     /// window.set_max_inner_size(Some(LogicalSize::new(400.0, 200.0)));
@@ -1253,8 +1253,8 @@ impl Window {
     /// ## Example
     ///
     /// ```no_run
-    /// # use winit::dpi::{LogicalPosition, PhysicalPosition, LogicalSize, PhysicalSize};
-    /// # use winit::window::Window;
+    /// # use deft_winit::dpi::{LogicalPosition, PhysicalPosition, LogicalSize, PhysicalSize};
+    /// # use deft_winit::window::Window;
     /// # fn scope(window: &Window) {
     /// // Specify the position in logical dimensions like this:
     /// window.set_ime_cursor_area(LogicalPosition::new(400.0, 200.0), LogicalSize::new(100, 100));
@@ -1465,8 +1465,8 @@ impl Window {
     /// Changes the position of the cursor in window coordinates.
     ///
     /// ```no_run
-    /// # use winit::dpi::{LogicalPosition, PhysicalPosition};
-    /// # use winit::window::Window;
+    /// # use deft_winit::dpi::{LogicalPosition, PhysicalPosition};
+    /// # use deft_winit::window::Window;
     /// # fn scope(window: &Window) {
     /// // Specify the position in logical dimensions like this:
     /// window.set_cursor_position(LogicalPosition::new(400.0, 200.0));
@@ -1498,7 +1498,7 @@ impl Window {
     /// First try confining the cursor, and if that fails, try locking it instead.
     ///
     /// ```no_run
-    /// # use winit::window::{CursorGrabMode, Window};
+    /// # use deft_winit::window::{CursorGrabMode, Window};
     /// # fn scope(window: &Window) {
     /// window
     ///     .set_cursor_grab(CursorGrabMode::Confined)

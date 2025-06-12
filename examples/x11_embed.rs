@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let event_loop = EventLoop::new()?;
 
     let mut app = XEmbedDemo { parent_window_id, window: None };
-    event_loop.run_app(&mut app).map_err(Into::into)
+    event_loop.run_app(app).map_err(Into::into)
 }
 
 #[cfg(not(x11_platform))]

@@ -3,16 +3,16 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Debug;
-#[cfg(not(any(android_platform, ios_platform)))]
+#[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::{fmt, mem};
 
 use ::tracing::{error, info};
 use cursor_icon::CursorIcon;
-#[cfg(not(any(android_platform, ios_platform)))]
+#[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
 use rwh_06::{DisplayHandle, HasDisplayHandle};
-#[cfg(not(any(android_platform, ios_platform)))]
+#[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
 use softbuffer::{Context, Surface};
 
 use deft_winit::application::ApplicationHandler;
@@ -47,23 +47,25 @@ fn main() -> Result<(), Box<dyn Error>> {
     tracing::init();
 
     let event_loop = EventLoop::<UserEvent>::with_user_event().build()?;
-    let _event_loop_proxy = event_loop.create_proxy();
-
     // Wire the user event from another thread.
-    #[cfg(not(web_platform))]
-    std::thread::spawn(move || {
-        // Wake up the `event_loop` once every second and dispatch a custom event
-        // from a different thread.
-        info!("Starting to send user event every second");
-        loop {
-            let _ = _event_loop_proxy.send_event(UserEvent::WakeUp);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        }
-    });
+    #[cfg(not(any(web_platform, emscripten_platform)))]
+    {
+        let _event_loop_proxy = event_loop.create_proxy();
+        std::thread::spawn(move || {
+            // Wake up the `event_loop` once every second and dispatch a custom event
+            // from a different thread.
+            info!("Starting to send user event every second");
+            loop {
+                let _ = _event_loop_proxy.send_event(UserEvent::WakeUp);
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            }
+        });
+    }
 
-    let mut state = Application::new(&event_loop);
 
-    event_loop.run_app(&mut state).map_err(Into::into)
+    let state = Application::new(&event_loop);
+
+    event_loop.run_app(state).map_err(Into::into)
 }
 
 #[allow(dead_code)]
@@ -82,14 +84,14 @@ struct Application {
     /// Drawing context.
     ///
     /// With OpenGL it could be EGLDisplay.
-    #[cfg(not(any(android_platform, ios_platform)))]
+    #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
     context: Option<Context<DisplayHandle<'static>>>,
 }
 
 impl Application {
     fn new<T>(event_loop: &EventLoop<T>) -> Self {
         // SAFETY: we drop the context right before the event loop is stopped, thus making it safe.
-        #[cfg(not(any(android_platform, ios_platform)))]
+        #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
         let context = Some(
             Context::new(unsafe {
                 std::mem::transmute::<DisplayHandle<'_>, DisplayHandle<'static>>(
@@ -114,7 +116,7 @@ impl Application {
         ];
 
         Self {
-            #[cfg(not(any(android_platform, ios_platform)))]
+            #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
             context,
             custom_cursors,
             icon,
@@ -407,6 +409,7 @@ impl ApplicationHandler<UserEvent> for Application {
                 }
             },
             WindowEvent::MouseInput { button, state, .. } => {
+                info!("Mouse button: {button:?} {state:?}");
                 let mods = window.modifiers;
                 if let Some(action) =
                     state.is_pressed().then(|| Self::process_mouse_binding(button, &mods)).flatten()
@@ -514,7 +517,7 @@ impl ApplicationHandler<UserEvent> for Application {
         }
     }
 
-    #[cfg(not(any(android_platform, ios_platform)))]
+    #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
     fn exiting(&mut self, _event_loop: &ActiveEventLoop) {
         // We must drop the context here.
         self.context = None;
@@ -528,7 +531,7 @@ struct WindowState {
     /// Render surface.
     ///
     /// NOTE: This surface must be dropped before the `Window`.
-    #[cfg(not(any(android_platform, ios_platform)))]
+    #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
     surface: Surface<DisplayHandle<'static>, Arc<Window>>,
     /// The actual winit Window.
     window: Arc<Window>,
@@ -564,7 +567,7 @@ impl WindowState {
 
         // SAFETY: the surface is dropped before the `window` which provided it with handle, thus
         // it doesn't outlive it.
-        #[cfg(not(any(android_platform, ios_platform)))]
+        #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
         let surface = Surface::new(app.context.as_ref().unwrap(), Arc::clone(&window))?;
 
         let theme = window.theme().unwrap_or(Theme::Dark);
@@ -583,7 +586,7 @@ impl WindowState {
             custom_idx: app.custom_cursors.len() - 1,
             cursor_grab: CursorGrabMode::None,
             named_idx,
-            #[cfg(not(any(android_platform, ios_platform)))]
+            #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
             surface,
             window,
             theme,
@@ -760,7 +763,7 @@ impl WindowState {
     /// Resize the window to the new size.
     fn resize(&mut self, size: PhysicalSize<u32>) {
         info!("Resized to {size:?}");
-        #[cfg(not(any(android_platform, ios_platform)))]
+        #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
         {
             let (width, height) = match (NonZeroU32::new(size.width), NonZeroU32::new(size.height))
             {
@@ -853,7 +856,7 @@ impl WindowState {
     }
 
     /// Draw the window contents.
-    #[cfg(not(any(android_platform, ios_platform)))]
+    #[cfg(not(any(android_platform, ios_platform, emscripten_platform)))]
     fn draw(&mut self) -> Result<(), Box<dyn Error>> {
         if self.occluded {
             info!("Skipping drawing occluded window={:?}", self.window.id());
@@ -875,7 +878,7 @@ impl WindowState {
         Ok(())
     }
 
-    #[cfg(any(android_platform, ios_platform))]
+    #[cfg(any(android_platform, ios_platform, emscripten_platform))]
     fn draw(&mut self) -> Result<(), Box<dyn Error>> {
         info!("Drawing but without rendering...");
         Ok(())

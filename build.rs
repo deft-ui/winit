@@ -10,6 +10,7 @@ fn main() {
         android_platform: { target_os = "android" },
         ohos_platform: { target_env = "ohos" },
         web_platform: { all(target_family = "wasm", target_os = "unknown") },
+        emscripten_platform: { all(target_family = "wasm", target_os = "emscripten") },
         macos_platform: { target_os = "macos" },
         ios_platform: { target_os = "ios" },
         windows_platform: { target_os = "windows" },
