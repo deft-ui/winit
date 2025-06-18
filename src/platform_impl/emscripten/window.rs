@@ -17,9 +17,11 @@ use crate::window::{
 };
 use dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Position, Size};
 use std::collections::VecDeque;
+use std::ffi::CString;
 use std::iter::Empty;
 use std::os::raw::c_char;
 use std::ptr::null_mut;
+use deft_emscripten_sys::emscripten_run_script;
 use crate::platform_impl::emscripten::bindings::emscripten_get_element_css_size;
 use crate::platform_impl::emscripten::event::keyboard::keyboard_callback;
 use crate::platform_impl::emscripten::monitor::MonitorHandle;
@@ -119,6 +121,10 @@ impl Window {
         _active_event_loop: &ActiveEventLoop,
         _attribs: WindowAttributes,
     ) -> Result<Window, crate::error::OsError> {
+        unsafe {
+            let script = CString::new(include_bytes!("init-input.js")).unwrap();
+            emscripten_run_script(script.as_ptr());
+        }
         let window = Window { inner: Inner { id: WindowId::dummy() } };
 
         // TODO: set up more event callbacks
@@ -427,13 +433,29 @@ impl Inner {
     }
 
     #[inline]
-    pub fn set_ime_cursor_area(&self, _position: Position, _size: Size) {
+    pub fn set_ime_cursor_area(&self, position: Position, size: Size) {
         // Currently a no-op as it does not seem there is good support for this on web
+        let hidpi_factor = get_hidpi_factor();
+        let position = position.to_logical::<i32>(hidpi_factor);
+        let size = size.to_logical::<i32>(hidpi_factor);
+        unsafe {
+            let code = format!("Module.winit.setImeCursor({}, {}, {}, {})", position.x, position.y, size.width, size.height);
+            let script = CString::new(code).unwrap();
+            emscripten_run_script(script.as_ptr());
+        }
     }
 
     #[inline]
-    pub fn set_ime_allowed(&self, _allowed: bool) {
-        // Currently not implemented
+    pub fn set_ime_allowed(&self, allowed: bool) {
+        unsafe {
+            let code = if allowed {
+                "Module.winit.allowIme(true)"
+            } else {
+                "Module.winit.allowIme(false)"
+            };
+            let script = CString::new(code).unwrap();
+            emscripten_run_script(script.as_ptr());
+        }
     }
 
     #[inline]

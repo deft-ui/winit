@@ -23,6 +23,8 @@ use crate::event::Event;
 
 pub(crate) use crate::icon::NoIcon as PlatformIcon;
 use deft_emscripten_sys as bindings;
+use libc::c_char;
+use crate::platform_impl::emscripten::event_hub::EventHub;
 
 const DOCUMENT_NAME: &'static str = "1\0";
 const WINDOW_NAME: &'static str = "2\0";
@@ -108,4 +110,14 @@ fn error_to_str(code: ffi::EMSCRIPTEN_RESULT) -> &'static str {
 
         _ => "Undocumented error",
     }
+}
+
+
+#[no_mangle]
+pub extern "C" fn winit_emscripten_send_input(text: *const c_char) {
+    let text = unsafe { std::ffi::CStr::from_ptr(text).to_string_lossy() };
+    EventHub::send_event(Event::WindowEvent {
+        window_id: crate::window::WindowId(WindowId(0)),
+        event: crate::event::WindowEvent::Ime(crate::event::Ime::Commit(text.to_string())),
+    });
 }
