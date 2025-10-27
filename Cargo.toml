@@ -1,6 +1,6 @@
 [package]
 name = "deft-winit"
-version = "0.32.1"
+version = "0.33.0"
 authors = [
     "The winit contributors",
     "Pierre Krieger <pierre.krieger1708@gmail.com>",
@@ -120,8 +120,8 @@ android-activity = "0.6.0"
 ndk = { version = "0.9.0", default-features = false }
 
 [target.'cfg(target_env = "ohos")'.dependencies]
-openharmony-ability = { version = "0.0.4" }
-openharmony-ability-derive = { version = "0.0.3" }
+openharmony-ability = { version = "0.2.2" }
+openharmony-ability-derive = { version = "0.2.2" }
 
 
 [target.'cfg(any(target_os = "ios", target_os = "macos"))'.dependencies]
