@@ -1,16 +1,12 @@
 #![allow(clippy::unnecessary_cast)]
 use std::cell::{Cell, RefCell};
-
-use objc2::rc::Retained;
-use objc2::runtime::{NSObjectProtocol, ProtocolObject};
-use objc2::{declare_class, msg_send, msg_send_id, mutability, sel, ClassType, DeclaredClass};
-use objc2_foundation::{CGFloat, CGPoint, CGRect, MainThreadMarker, NSObject, NSSet, NSString};
-use objc2_ui_kit::{
-    UICoordinateSpace, UIEvent, UIForceTouchCapability, UIGestureRecognizer,
-    UIGestureRecognizerDelegate, UIGestureRecognizerState, UIKeyInput, UIPanGestureRecognizer,
-    UIPinchGestureRecognizer, UIResponder, UIRotationGestureRecognizer, UITapGestureRecognizer,
-    UITextInputTraits, UITouch, UITouchPhase, UITouchType, UITraitEnvironment, UIView,
-};
+use libc::unsetenv;
+use objc2::rc::{Allocated, Retained};
+use objc2::runtime::{AnyObject, NSObjectProtocol, ProtocolObject};
+use objc2::{class, declare_class, msg_send, msg_send_id, mutability, sel, ClassType, DeclaredClass};
+use objc2::ffi::{NSInteger, NSUInteger};
+use objc2_foundation::{CGFloat, CGPoint, CGRect, MainThreadMarker, NSArray, NSAttributedStringKey, NSComparisonResult, NSDictionary, NSMutableString, NSObject, NSRange, NSSet, NSString};
+use objc2_ui_kit::{NSWritingDirection, UICoordinateSpace, UIEvent, UIForceTouchCapability, UIGestureRecognizer, UIGestureRecognizerDelegate, UIGestureRecognizerState, UIKeyInput, UIPanGestureRecognizer, UIPinchGestureRecognizer, UIResponder, UIRotationGestureRecognizer, UITapGestureRecognizer, UITextInput, UITextInputDelegate, UITextInputStringTokenizer, UITextInputTokenizer, UITextInputTraits, UITextLayoutDirection, UITextPosition, UITextRange, UITextSelectionRect, UITextStorageDirection, UITouch, UITouchPhase, UITouchType, UITraitEnvironment, UIView};
 
 use super::app_state::{self, EventWrapper};
 use super::window::WinitUIWindow;
@@ -21,16 +17,121 @@ use crate::platform_impl::platform::DEVICE_ID;
 use crate::platform_impl::KeyEventExtra;
 use crate::window::{WindowAttributes, WindowId as RootWindowId};
 
+const LOCATION_NOT_FOUND: NSUInteger = NSUInteger::MAX;
+
+#[derive(Clone)]
+pub struct TextPositionState {
+    offset: i32,
+}
+
+#[derive(Clone)]
+pub struct TextRangeState {
+    range: NSRange,
+}
+
+declare_class!(
+    pub struct CustomTextPosition;
+     unsafe impl ClassType for CustomTextPosition {
+        type Super = NSObject;
+        type Mutability = mutability::InteriorMutable;
+        const NAME: &'static str = "CustomTextPosition";
+    }
+
+    impl DeclaredClass for CustomTextPosition {
+        type Ivars = TextPositionState;
+    }
+
+    unsafe impl CustomTextPosition {
+        #[method_id(initWithOffset:)]
+        fn init_with_offset(this: Allocated<Self>, offset: i32) -> Option<Retained<Self>> {
+            let this = this.set_ivars(TextPositionState {
+                offset,
+            });
+            unsafe { msg_send_id![super(this), init] }
+        }
+
+        #[method(offset)]
+        fn __get_offset(&self) -> i32 {
+            self.ivars().offset
+        }
+    }
+);
+
+declare_class!(
+    pub struct CustomTextRange;
+    unsafe impl ClassType for CustomTextRange {
+        type Super = UITextRange;
+        type Mutability = mutability::MainThreadOnly;
+        const NAME: &'static str = "CustomTextRange";
+    }
+    impl DeclaredClass for CustomTextRange {
+        type Ivars = TextRangeState;
+    }
+     unsafe impl CustomTextRange {
+        #[method_id(initWithRange:)]
+        fn init_with_range(this: Allocated<Self>, range: NSRange) -> Option<Retained<Self>> {
+            let this = this.set_ivars(TextRangeState {
+                range,
+            });
+            unsafe { msg_send_id![super(this), init] }
+        }
+
+        #[method(isEmpty)]
+        fn is_empty(&self) -> bool {
+            self.ivars().range.length == 0
+        }
+
+        #[method_id(start)]
+        fn __get_start(&self) -> Retained<CustomTextPosition> {
+            CustomTextPosition::from_offset(self.ivars().range.location as i32)
+        }
+
+        #[method_id(end)]
+        fn __get_end(&self) -> Retained<CustomTextPosition> {
+            CustomTextPosition::from_offset(self.ivars().range.location as i32 + self.ivars().range.length as i32)
+        }
+
+    }
+);
+
+impl CustomTextRange {
+
+    pub fn from_range(range: NSRange) -> Retained<Self> {
+        let obj = unsafe { msg_send_id![CustomTextRange::class(), alloc] };
+        let obj: Retained<CustomTextRange> = unsafe { msg_send_id![obj, initWithRange: range]};
+        obj
+    }
+
+    pub fn from_start_len(start: i32, len: i32) -> Retained<Self> {
+        let range = NSRange::new(start as usize, len as usize);
+        Self::from_range(range)
+    }
+}
+
+impl CustomTextPosition {
+    pub fn from_offset(offset: i32) -> Retained<Self> {
+        let obj = unsafe { msg_send_id![CustomTextPosition::class(), alloc] };
+        let obj: Retained<CustomTextPosition> = unsafe { msg_send_id![obj, initWithOffset: offset] };
+        obj
+    }
+}
+
 pub struct WinitViewState {
     pinch_gesture_recognizer: RefCell<Option<Retained<UIPinchGestureRecognizer>>>,
     doubletap_gesture_recognizer: RefCell<Option<Retained<UITapGestureRecognizer>>>,
     rotation_gesture_recognizer: RefCell<Option<Retained<UIRotationGestureRecognizer>>>,
     pan_gesture_recognizer: RefCell<Option<Retained<UIPanGestureRecognizer>>>,
 
+    tkz: RefCell<Option<Retained<UITextInputStringTokenizer>>>,
+
     // for iOS delta references the start of the Gesture
     rotation_last_delta: Cell<CGFloat>,
     pinch_last_delta: Cell<CGFloat>,
     pan_last_delta: Cell<CGPoint>,
+
+    text: RefCell<Retained<NSMutableString>>,
+    selected_text_range: RefCell<NSRange>,
+    marked_text_range: RefCell<NSRange>,
 }
 
 declare_class!(
@@ -351,6 +452,304 @@ declare_class!(
             self.handle_delete_backward()
         }
     }
+
+    unsafe impl UITextInput for WinitView {
+        #[method_id(textInRange:)]
+        unsafe fn textInRange(&self, range: &CustomTextRange) -> Option<Retained<NSString>> {
+            unsafe {
+                Some(self.ivars().text.borrow().substringWithRange(range.ivars().range))
+            }
+        }
+
+        #[method(replaceRange:withText:)]
+        unsafe fn replaceRange_withText(&self, indexed_range: &CustomTextRange, text: &NSString) {
+            let mut selected_ns_range = self.ivars().selected_text_range.borrow().clone();
+            if indexed_range.ivars().range.location + indexed_range.ivars().range.length <= selected_ns_range.location {
+                selected_ns_range.location -= indexed_range.ivars().range.length - text.length();
+            }
+            unsafe {
+                self.ivars().text.borrow_mut().replaceCharactersInRange_withString(indexed_range.ivars().range, text);
+            }
+            self.ivars().selected_text_range.replace(selected_ns_range);
+        }
+
+        #[method_id(selectedTextRange)]
+        unsafe fn selectedTextRange(&self) -> Option<Retained<CustomTextRange>> {
+            Some(CustomTextRange::from_range(self.ivars().selected_text_range.borrow().clone()))
+        }
+
+        #[method(setSelectedTextRange:)]
+        unsafe fn setSelectedTextRange(&self, selected_text_range: Option<&CustomTextRange>) {
+            *self.ivars().selected_text_range.borrow_mut() = selected_text_range.unwrap().ivars().range;
+        }
+
+        #[method_id(markedTextRange)]
+        unsafe fn markedTextRange(&self) -> Option<Retained<CustomTextRange>> {
+            let range = self.ivars().marked_text_range.borrow().clone();
+            if range.length == 0 {
+                None
+            } else {
+                Some(CustomTextRange::from_range(range))
+            }
+        }
+
+        #[method_id(markedTextStyle)]
+        unsafe fn markedTextStyle(
+            &self,
+        ) -> Option<Retained<NSDictionary<NSAttributedStringKey, AnyObject>>> {
+            None
+        }
+
+        #[method(setMarkedTextStyle:)]
+        unsafe fn setMarkedTextStyle(
+            &self,
+            marked_text_style: Option<&NSDictionary<NSAttributedStringKey, AnyObject>>,
+        ) {
+
+        }
+
+        #[method(setMarkedText:selectedRange:)]
+        unsafe fn setMarkedText_selectedRange(
+            &self,
+            marked_text: Option<&NSString>,
+            selected_range: NSRange,
+        ) {
+            let empty_str = NSString::new();
+            let marked_text = marked_text.unwrap_or(&empty_str);
+            let mut marked_text_range = self.ivars().marked_text_range.borrow().clone();
+            let selected_ns_range = self.ivars().selected_text_range.borrow().clone();
+
+            if marked_text_range.location != LOCATION_NOT_FOUND {
+                self.replace_range_with_text(marked_text_range, marked_text);
+                marked_text_range.length = marked_text.length();
+            } else if selected_ns_range.length > 0 {
+                self.replace_range_with_text(selected_ns_range, marked_text);
+                marked_text_range.location = selected_ns_range.location;
+                marked_text_range.length = marked_text.length();
+            } else {
+                let mut my_text = self.ivars().text.borrow_mut();
+                unsafe {
+                    my_text.insertString_atIndex(marked_text, selected_ns_range.location);
+                }
+                marked_text_range.location = selected_ns_range.location;
+                marked_text_range.length = marked_text.length();
+            }
+            self.ivars().marked_text_range.replace(marked_text_range);
+            self.ivars().selected_text_range.replace(
+                NSRange::new(selected_range.location + marked_text_range.location, selected_range.length)
+            );
+        }
+
+        #[method(unmarkText)]
+        unsafe fn unmarkText(&self) {
+            let mut marked_text_range = self.ivars().marked_text_range.borrow().clone();
+            if marked_text_range.location == LOCATION_NOT_FOUND {
+                return;
+            }
+            marked_text_range.location = LOCATION_NOT_FOUND;
+            self.ivars().marked_text_range.replace(marked_text_range);
+        }
+
+        #[method_id(beginningOfDocument)]
+        unsafe fn beginningOfDocument(&self) -> Retained<CustomTextPosition> {
+            CustomTextPosition::from_offset(0)
+        }
+
+        #[method_id(endOfDocument)]
+        unsafe fn endOfDocument(&self) -> Retained<CustomTextPosition> {
+            let text = self.ivars().text.borrow();
+            let len = text.length() as i32;
+            CustomTextPosition::from_offset(len)
+        }
+
+        #[method_id(textRangeFromPosition:toPosition:)]
+        unsafe fn textRangeFromPosition_toPosition(
+            &self,
+            from_position: &CustomTextPosition,
+            to_position: &CustomTextPosition,
+        ) -> Option<Retained<CustomTextRange>> {
+            let start = i32::min(from_position.ivars().offset, to_position.ivars().offset);
+            let len = i32::abs(to_position.ivars().offset - from_position.ivars().offset);
+            Some(CustomTextRange::from_start_len(start, len))
+        }
+
+        #[method_id(positionFromPosition:offset:)]
+        unsafe fn positionFromPosition_offset(
+            &self,
+            position: &CustomTextPosition,
+            offset: NSInteger,
+        ) -> Option<Retained<CustomTextPosition>> {
+            let end = position.ivars().offset + offset as i32;
+            if end > self.ivars().text.borrow().length() as i32  || end < 0 {
+                None
+            } else {
+                Some(CustomTextPosition::from_offset(end))
+            }
+        }
+
+        #[method_id(positionFromPosition:inDirection:offset:)]
+        unsafe fn positionFromPosition_inDirection_offset(
+            &self,
+            position: &CustomTextPosition,
+            direction: UITextLayoutDirection,
+            offset: NSInteger,
+        ) -> Option<Retained<CustomTextPosition>> {
+            let offset = offset as i32;
+            let mut new_position = position.ivars().offset;
+            match direction {
+                UITextLayoutDirection::Right => {
+                    new_position += offset;
+                },
+                UITextLayoutDirection::Left => {
+                    new_position -= offset;
+                }
+                _ => {},
+            }
+            if new_position < 0 {
+                new_position = 0;
+            }
+            let text_len = self.ivars().text.borrow().length() as i32;
+            if new_position > text_len {
+                new_position = text_len;
+            }
+            Some(CustomTextPosition::from_offset(new_position))
+        }
+
+        #[method(comparePosition:toPosition:)]
+        unsafe fn comparePosition_toPosition(
+            &self,
+            position: &CustomTextPosition,
+            other: &CustomTextPosition,
+        ) -> NSComparisonResult {
+            let offset1 = position.ivars().offset;
+            let offset2 = other.ivars().offset;
+            if offset1 < offset2 {
+                NSComparisonResult::Ascending
+            } else if offset1 > offset2 {
+                NSComparisonResult::Descending
+            } else {
+                NSComparisonResult::Same
+            }
+        }
+
+        #[method(offsetFromPosition:toPosition:)]
+        unsafe fn offsetFromPosition_toPosition(
+            &self,
+            from: &CustomTextPosition,
+            to_position: &CustomTextPosition,
+        ) -> NSInteger {
+            let offset1 = from.ivars().offset;
+            let offset2 = to_position.ivars().offset;
+            (offset2 - offset1) as NSInteger
+        }
+
+        #[method_id(inputDelegate)]
+        unsafe fn inputDelegate(&self)
+            -> Option<Retained<ProtocolObject<dyn UITextInputDelegate>>> {
+            None
+        }
+
+        #[method(setInputDelegate:)]
+        unsafe fn setInputDelegate(
+            &self,
+            input_delegate: Option<&ProtocolObject<dyn UITextInputDelegate>>,
+        ) {
+
+        }
+
+        #[method_id(tokenizer)]
+        unsafe fn tokenizer(&self) -> Retained<ProtocolObject<dyn UITextInputTokenizer>> {
+            let b = self.ivars().tkz.borrow();
+            let t = b.as_ref().unwrap().clone();
+
+            let proto: Retained<ProtocolObject<dyn UITextInputTokenizer>> = ProtocolObject::from_retained(t);
+            proto
+        }
+
+        #[method_id(positionWithinRange:farthestInDirection:)]
+        unsafe fn positionWithinRange_farthestInDirection(
+            &self,
+            range: &CustomTextRange,
+            direction: UITextLayoutDirection,
+        ) -> Option<Retained<CustomTextPosition>> {
+            match direction {
+                UITextLayoutDirection::Up | UITextLayoutDirection::Left => {
+                    Some(CustomTextPosition::from_offset(range.ivars().range.location as i32))
+                },
+                UITextLayoutDirection::Right | UITextLayoutDirection::Down => {
+                    Some(CustomTextPosition::from_offset(range.ivars().range.location as i32 + range.ivars().range.length as i32))
+                },
+                _ => None
+            }
+        }
+
+        #[method_id(characterRangeByExtendingPosition:inDirection:)]
+        unsafe fn characterRangeByExtendingPosition_inDirection(
+            &self,
+            position: &UITextPosition,
+            direction: UITextLayoutDirection,
+        ) -> Option<Retained<UITextRange>> {
+            None
+        }
+
+        #[method(baseWritingDirectionForPosition:inDirection:)]
+        unsafe fn baseWritingDirectionForPosition_inDirection(
+            &self,
+            position: &UITextPosition,
+            direction: UITextStorageDirection,
+        ) -> NSWritingDirection {
+            NSWritingDirection::LeftToRight
+        }
+
+        #[method(setBaseWritingDirection:forRange:)]
+        unsafe fn setBaseWritingDirection_forRange(
+            &self,
+            writing_direction: NSWritingDirection,
+            range: &UITextRange,
+        ) {
+
+        }
+
+        #[method(firstRectForRange:)]
+        unsafe fn firstRectForRange(&self, range: &UITextRange) -> CGRect {
+            CGRect::default()
+        }
+
+        #[method(caretRectForPosition:)]
+        unsafe fn caretRectForPosition(&self, position: &UITextPosition) -> CGRect {
+            CGRect::default()
+        }
+
+        #[method_id(selectionRectsForRange:)]
+        unsafe fn selectionRectsForRange(
+            &self,
+            range: &UITextRange,
+        ) -> Retained<NSArray<UITextSelectionRect>> {
+            NSArray::new()
+        }
+
+        #[method_id(closestPositionToPoint:)]
+        unsafe fn closestPositionToPoint(&self, point: CGPoint)
+            -> Option<Retained<UITextPosition>> {
+            None
+        }
+
+        #[method_id(closestPositionToPoint:withinRange:)]
+        unsafe fn closestPositionToPoint_withinRange(
+            &self,
+            point: CGPoint,
+            range: &UITextRange,
+        ) -> Option<Retained<UITextPosition>> {
+            None
+        }
+
+        #[method_id(characterRangeAtPoint:)]
+        unsafe fn characterRangeAtPoint(&self, point: CGPoint) -> Option<Retained<UITextRange>> {
+            None
+        }
+
+    }
+
 );
 
 impl WinitView {
@@ -359,17 +758,28 @@ impl WinitView {
         window_attributes: &WindowAttributes,
         frame: CGRect,
     ) -> Retained<Self> {
+        let text = NSMutableString::new();
         let this = mtm.alloc().set_ivars(WinitViewState {
             pinch_gesture_recognizer: RefCell::new(None),
             doubletap_gesture_recognizer: RefCell::new(None),
             rotation_gesture_recognizer: RefCell::new(None),
             pan_gesture_recognizer: RefCell::new(None),
+            text: RefCell::new(text),
+            selected_text_range: RefCell::new(NSRange::new(0, 0)),
+            marked_text_range: RefCell::new(NSRange::new(LOCATION_NOT_FOUND, 0)),
 
             rotation_last_delta: Cell::new(0.0),
             pinch_last_delta: Cell::new(0.0),
             pan_last_delta: Cell::new(CGPoint { x: 0.0, y: 0.0 }),
+            tkz: RefCell::new(None),
         });
         let this: Retained<Self> = unsafe { msg_send_id![super(this), initWithFrame: frame] };
+
+        unsafe {
+            let tokenizer = mtm.alloc::<UITextInputStringTokenizer>();
+            let tkz = UITextInputStringTokenizer::initWithTextInput(tokenizer, this.as_ref());
+            this.ivars().tkz.replace(Some(tkz));
+        }
 
         this.setMultipleTouchEnabled(true);
 
@@ -378,6 +788,13 @@ impl WinitView {
         }
 
         this
+    }
+
+    fn replace_range_with_text(&self, range: NSRange, text: &NSString) {
+        let mut text_store = self.ivars().text.borrow_mut();
+        unsafe {
+            text_store.replaceCharactersInRange_withString(range, text);
+        }
     }
 
     fn window(&self) -> Option<Retained<WinitUIWindow>> {
