@@ -1327,6 +1327,11 @@ impl Window {
         self.window.maybe_queue_on_main(move |w| w.set_ime_purpose(purpose))
     }
 
+    #[inline]
+    pub fn commit_ime(&self) {
+        self.window.maybe_queue_on_main(|w| w.commit_ime())
+    }
+
     /// Brings the window to the front and sets input focus. Has no effect if the window is
     /// already in focus, minimized, or not visible.
     ///
