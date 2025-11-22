@@ -11,7 +11,7 @@ use objc2_ui_kit::{NSWritingDirection, UICoordinateSpace, UIEvent, UIForceTouchC
 use super::app_state::{self, EventWrapper};
 use super::window::WinitUIWindow;
 use crate::dpi::PhysicalPosition;
-use crate::event::{ElementState, Event, Force, KeyEvent, Touch, TouchPhase, WindowEvent};
+use crate::event::{ElementState, Event, Force, Ime, KeyEvent, Touch, TouchPhase, WindowEvent};
 use crate::keyboard::{Key, KeyCode, KeyLocation, NamedKey, NativeKeyCode, PhysicalKey};
 use crate::platform_impl::platform::DEVICE_ID;
 use crate::platform_impl::KeyEventExtra;
@@ -538,6 +538,17 @@ declare_class!(
             self.ivars().selected_text_range.replace(
                 NSRange::new(selected_range.location + marked_text_range.location, selected_range.length)
             );
+
+            let offset  = if marked_text.is_empty() {
+                None
+            } else {
+                let sub_string_a = unsafe { marked_text.substringToIndex(selected_range.location) };
+                let sub_string_b = unsafe { marked_text.substringToIndex(selected_range.end()) };
+                let lowerbound_utf8 = sub_string_a.len();
+                let upperbound_utf8 = sub_string_b.len();
+                Some((lowerbound_utf8, upperbound_utf8))
+            };
+            self.handle_ime(Ime::Preedit(marked_text.to_string(), offset));
         }
 
         #[method(unmarkText)]
@@ -548,6 +559,7 @@ declare_class!(
             }
             marked_text_range.location = LOCATION_NOT_FOUND;
             self.ivars().marked_text_range.replace(marked_text_range);
+            self.handle_ime(Ime::Preedit(String::new(), None));
         }
 
         #[method_id(beginningOfDocument)]
@@ -1020,5 +1032,15 @@ impl WinitView {
                 })
             }),
         );
+    }
+
+    fn handle_ime(&self, ime: Ime) {
+        let window = self.window().unwrap();
+        let event = EventWrapper::StaticEvent(Event::WindowEvent {
+            window_id: RootWindowId(window.id()),
+            event: WindowEvent::Ime(ime),
+        });
+        let mtm = MainThreadMarker::new().unwrap();
+        app_state::handle_nonuser_events(mtm, vec![event]);
     }
 }
