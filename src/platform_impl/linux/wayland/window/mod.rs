@@ -613,6 +613,9 @@ impl Window {
     }
 
     #[inline]
+    pub fn commit_ime(&self) {}
+
+    #[inline]
     pub fn focus_window(&self) {}
 
     #[inline]

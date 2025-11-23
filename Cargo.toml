@@ -222,6 +222,7 @@ features = [
     "UIView",
     "UIViewController",
     "UIWindow",
+    "NSText"
 ]
 
 [target.'cfg(target_os = "windows")'.dependencies]

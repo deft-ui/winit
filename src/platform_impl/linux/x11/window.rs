@@ -1777,6 +1777,9 @@ impl UnownedWindow {
     pub fn set_ime_purpose(&self, _purpose: ImePurpose) {}
 
     #[inline]
+    pub fn commit_ime(&self) {}
+
+    #[inline]
     pub fn focus_window(&self) {
         let atoms = self.xconn.atoms();
         let state_atom = atoms[WM_STATE];

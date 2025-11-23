@@ -10,14 +10,7 @@ use monitor::VideoModeHandle;
 use objc2::rc::{autoreleasepool, Retained};
 use objc2::runtime::{AnyObject, ProtocolObject};
 use objc2::{declare_class, msg_send_id, mutability, sel, ClassType, DeclaredClass};
-use objc2_app_kit::{
-    NSAppKitVersionNumber, NSAppKitVersionNumber10_12, NSAppearance, NSAppearanceCustomization,
-    NSAppearanceNameAqua, NSApplication, NSApplicationPresentationOptions, NSBackingStoreType,
-    NSColor, NSDraggingDestination, NSFilenamesPboardType, NSPasteboard,
-    NSRequestUserAttentionType, NSScreen, NSView, NSWindowButton, NSWindowDelegate,
-    NSWindowFullScreenButton, NSWindowLevel, NSWindowOcclusionState, NSWindowOrderingMode,
-    NSWindowSharingType, NSWindowStyleMask, NSWindowTabbingMode, NSWindowTitleVisibility,
-};
+use objc2_app_kit::{NSAppKitVersionNumber, NSAppKitVersionNumber10_12, NSAppearance, NSAppearanceCustomization, NSAppearanceNameAqua, NSApplication, NSApplicationPresentationOptions, NSBackingStoreType, NSColor, NSDraggingDestination, NSFilenamesPboardType, NSPasteboard, NSRequestUserAttentionType, NSScreen, NSStandardKeyBindingResponding, NSTextInputClient, NSView, NSWindowButton, NSWindowDelegate, NSWindowFullScreenButton, NSWindowLevel, NSWindowOcclusionState, NSWindowOrderingMode, NSWindowSharingType, NSWindowStyleMask, NSWindowTabbingMode, NSWindowTitleVisibility};
 use objc2_foundation::{
     ns_string, CGFloat, MainThreadMarker, NSArray, NSCopying, NSDictionary, NSKeyValueChangeKey,
     NSKeyValueChangeNewKey, NSKeyValueChangeOldKey, NSKeyValueObservingOptions, NSObject,
@@ -1566,6 +1559,18 @@ impl WindowDelegate {
 
     #[inline]
     pub fn set_ime_purpose(&self, _purpose: ImePurpose) {}
+
+    #[inline]
+    pub fn commit_ime(&self) {
+        unsafe {
+            if let Some(ic) = self.view().inputContext() {
+                ic.discardMarkedText();
+                // Reset input states
+                ic.deactivate();
+                ic.activate();
+            }
+        }
+    }
 
     #[inline]
     pub fn focus_window(&self) {

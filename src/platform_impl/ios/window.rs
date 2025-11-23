@@ -386,6 +386,8 @@ impl Inner {
     pub fn set_ime_purpose(&self, _purpose: ImePurpose) {
         warn!("`Window::set_ime_purpose` is ignored on iOS")
     }
+    
+    pub fn commit_ime(&self) {}
 
     pub fn focus_window(&self) {
         warn!("`Window::set_focus` is ignored on iOS")

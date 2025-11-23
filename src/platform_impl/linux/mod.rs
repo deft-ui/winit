@@ -554,6 +554,11 @@ impl Window {
     }
 
     #[inline]
+    pub fn commit_ime(&self) {
+        x11_or_wayland!(match self; Window(w) => w.commit_ime())
+    }
+
+    #[inline]
     pub fn focus_window(&self) {
         x11_or_wayland!(match self; Window(w) => w.focus_window())
     }
