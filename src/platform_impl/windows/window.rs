@@ -45,7 +45,6 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 };
 
 use tracing::warn;
-use dpi::PhysicalPosition;
 use crate::cursor::Cursor;
 use crate::dpi::{PhysicalPosition, PhysicalSize, Position, Size};
 use crate::error::{ExternalError, NotSupportedError, OsError as RootOsError};

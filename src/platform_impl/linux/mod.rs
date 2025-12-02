@@ -364,6 +364,11 @@ impl Window {
     }
 
     #[inline]
+    pub fn pointer_position(&self) -> Option<PhysicalPosition<i32>> {
+        x11_or_wayland!(match self; Window(w) => w.pointer_position())
+    }
+
+    #[inline]
     pub fn outer_position(&self) -> Result<PhysicalPosition<i32>, NotSupportedError> {
         x11_or_wayland!(match self; Window(w) => w.outer_position())
     }
