@@ -736,7 +736,7 @@ impl TryFrom<&str> for Theme {
     type Error = ();
 
     /// ```
-    /// use winit::window::Theme;
+    /// use deft_winit::window::Theme;
     ///
     /// assert_eq!("dark".try_into(), Ok(Theme::Dark));
     /// assert_eq!("lIghT".try_into(), Ok(Theme::Light));

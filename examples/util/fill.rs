@@ -106,12 +106,12 @@ mod platform {
 
 #[cfg(not(all(feature = "rwh_05", not(any(target_os = "android", target_os = "ios")))))]
 mod platform {
-    pub fn fill_window(_window: &winit::window::Window) {
+    pub fn fill_window(_window: &deft_winit::window::Window) {
         // No-op on mobile platforms.
     }
 
     #[allow(dead_code)]
-    pub fn cleanup_window(_window: &winit::window::Window) {
+    pub fn cleanup_window(_window: &deft_winit::window::Window) {
         // No-op on mobile platforms.
     }
 }

@@ -6,7 +6,7 @@
 //! the [`EventLoop::new()`] function.
 //!
 //! ```no_run
-//! use winit::event_loop::EventLoop;
+//! use deft_winit::event_loop::EventLoop;
 //!
 //! # // Intentionally use `fn main` for clarity
 //! fn main() {
@@ -47,10 +47,10 @@
 //!
 //!
 //! ```no_run
-//! use winit::application::ApplicationHandler;
-//! use winit::event::WindowEvent;
-//! use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
-//! use winit::window::{Window, WindowId};
+//! use deft_winit::application::ApplicationHandler;
+//! use deft_winit::event::WindowEvent;
+//! use deft_winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+//! use deft_winit::window::{Window, WindowId};
 //!
 //! #[derive(Default)]
 //! struct App {
@@ -102,8 +102,8 @@
 //!     // input, and uses significantly less power/CPU time than ControlFlow::Poll.
 //!     event_loop.set_control_flow(ControlFlow::Wait);
 //!
-//!     let mut app = App::default();
-//!     event_loop.run_app(&mut app);
+//!     let app = App::default();
+//!     event_loop.run_app(app);
 //! }
 //! ```
 //!

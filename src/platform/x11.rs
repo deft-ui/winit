@@ -167,9 +167,9 @@ pub trait WindowAttributesExtX11 {
     /// Build window with base size hint.
     ///
     /// ```
-    /// # use winit::dpi::{LogicalSize, PhysicalSize};
-    /// # use winit::window::Window;
-    /// # use winit::platform::x11::WindowAttributesExtX11;
+    /// # use deft_winit::dpi::{LogicalSize, PhysicalSize};
+    /// # use deft_winit::window::Window;
+    /// # use deft_winit::platform::x11::WindowAttributesExtX11;
     /// // Specify the size in logical dimensions like this:
     /// Window::default_attributes().with_base_size(LogicalSize::new(400.0, 200.0));
     ///
@@ -183,9 +183,9 @@ pub trait WindowAttributesExtX11 {
     /// # Example
     ///
     /// ```no_run
-    /// use winit::window::Window;
-    /// use winit::event_loop::ActiveEventLoop;
-    /// use winit::platform::x11::{XWindow, WindowAttributesExtX11};
+    /// use deft_winit::window::Window;
+    /// use deft_winit::event_loop::ActiveEventLoop;
+    /// use deft_winit::platform::x11::{XWindow, WindowAttributesExtX11};
     /// # fn create_window(event_loop: &ActiveEventLoop) -> Result<(), Box<dyn std::error::Error>> {
     /// let parent_window_id = std::env::args().nth(1).unwrap().parse::<XWindow>()?;
     /// let window_attributes = Window::default_attributes().with_embed_parent_window(parent_window_id);

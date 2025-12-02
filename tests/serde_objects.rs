@@ -1,10 +1,10 @@
 #![cfg(feature = "serde")]
 
 use serde::{Deserialize, Serialize};
-use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use winit::event::{ElementState, MouseButton, MouseScrollDelta, TouchPhase};
-use winit::keyboard::{Key, KeyCode, KeyLocation, ModifiersState, NamedKey, PhysicalKey};
-use winit::window::CursorIcon;
+use deft_winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
+use deft_winit::event::{ElementState, MouseButton, MouseScrollDelta, TouchPhase};
+use deft_winit::keyboard::{Key, KeyCode, KeyLocation, ModifiersState, NamedKey, PhysicalKey};
+use deft_winit::window::CursorIcon;
 
 #[allow(dead_code)]
 fn needs_serde<S: Serialize + Deserialize<'static>>() {}

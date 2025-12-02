@@ -165,7 +165,7 @@ impl<T> EventLoopBuilderExtAndroid for EventLoopBuilder<T> {
 /// their `android_main(app: AndroidApp)` function like:
 /// ```rust
 /// #[cfg(target_os = "android")]
-/// use winit::platform::android::activity::AndroidApp;
+/// use deft_winit::platform::android::activity::AndroidApp;
 /// ```
 pub mod activity {
     // We enable the `"native-activity"` feature just so that we can build the

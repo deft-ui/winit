@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         fn resumed(&mut self, event_loop: &ActiveEventLoop) {
             let window_attributes = Window::default_attributes()
                 .with_title("Fantastic window number one!")
-                .with_inner_size(winit::dpi::LogicalSize::new(128.0, 128.0));
+                .with_inner_size(deft_winit::dpi::LogicalSize::new(128.0, 128.0));
             let window = event_loop.create_window(window_attributes).unwrap();
             self.window_id = Some(window.id());
             self.window = Some(window);

@@ -1,4 +1,4 @@
-//! Simple winit application.
+//! Simple deft_winit application.
 
 use std::collections::HashMap;
 use std::error::Error;

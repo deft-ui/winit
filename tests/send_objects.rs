@@ -5,32 +5,32 @@ fn needs_send<T: Send>() {}
 fn event_loop_proxy_send() {
     #[allow(dead_code)]
     fn is_send<T: 'static + Send>() {
-        // ensures that `winit::EventLoopProxy<T: Send>` implements `Send`
-        needs_send::<winit::event_loop::EventLoopProxy<T>>();
+        // ensures that `deft_winit::EventLoopProxy<T: Send>` implements `Send`
+        needs_send::<deft_winit::event_loop::EventLoopProxy<T>>();
     }
 }
 
 #[test]
 fn window_send() {
-    // ensures that `winit::Window` implements `Send`
-    needs_send::<winit::window::Window>();
+    // ensures that `deft_winit::Window` implements `Send`
+    needs_send::<deft_winit::window::Window>();
 }
 
 #[test]
 fn window_builder_send() {
-    needs_send::<winit::window::WindowAttributes>();
+    needs_send::<deft_winit::window::WindowAttributes>();
 }
 
 #[test]
 fn ids_send() {
     // ensures that the various `..Id` types implement `Send`
-    needs_send::<winit::window::WindowId>();
-    needs_send::<winit::event::DeviceId>();
-    needs_send::<winit::monitor::MonitorHandle>();
+    needs_send::<deft_winit::window::WindowId>();
+    needs_send::<deft_winit::event::DeviceId>();
+    needs_send::<deft_winit::monitor::MonitorHandle>();
 }
 
 #[test]
 fn custom_cursor_send() {
-    needs_send::<winit::window::CustomCursorSource>();
-    needs_send::<winit::window::CustomCursor>();
+    needs_send::<deft_winit::window::CustomCursorSource>();
+    needs_send::<deft_winit::window::CustomCursor>();
 }

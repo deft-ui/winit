@@ -98,8 +98,8 @@ impl ActiveEventLoop {
 }
 
 /// ```compile_fail
-/// use winit::event_loop::EventLoop;
-/// use winit::platform::run_on_demand::EventLoopExtRunOnDemand;
+/// use deft_winit::event_loop::EventLoop;
+/// use deft_winit::platform::run_on_demand::EventLoopExtRunOnDemand;
 ///
 /// let mut event_loop = EventLoop::new().unwrap();
 /// event_loop.run_on_demand(|_, _| {

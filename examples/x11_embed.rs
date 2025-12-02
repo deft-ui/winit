@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         fn resumed(&mut self, event_loop: &ActiveEventLoop) {
             let window_attributes = Window::default_attributes()
                 .with_title("An embedded window!")
-                .with_inner_size(winit::dpi::LogicalSize::new(128.0, 128.0))
+                .with_inner_size(deft_winit::dpi::LogicalSize::new(128.0, 128.0))
                 .with_embed_parent_window(self.parent_window_id);
 
             self.window = Some(event_loop.create_window(window_attributes).unwrap());

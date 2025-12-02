@@ -107,7 +107,7 @@ impl<T> EventLoopBuilderExtOpenHarmony for EventLoopBuilder<T> {
 /// implement entry like:
 /// ```rust
 /// #[cfg(target_env = "ohos")]
-/// use winit::platform::ohos::ability::OpenHarmonyApp;
+/// use deft_winit::platform::ohos::ability::OpenHarmonyApp;
 /// use openharmony_ability_derive::ability;
 ///
 /// #[ability]

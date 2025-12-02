@@ -183,9 +183,9 @@ pub trait EventLoopBuilderExtWindows {
     /// Disable process-wide DPI awareness.
     ///
     /// ```
-    /// use winit::event_loop::EventLoopBuilder;
+    /// use deft_winit::event_loop::EventLoopBuilder;
     /// #[cfg(target_os = "windows")]
-    /// use winit::platform::windows::EventLoopBuilderExtWindows;
+    /// use deft_winit::platform::windows::EventLoopBuilderExtWindows;
     ///
     /// let mut builder = EventLoopBuilder::new();
     /// #[cfg(target_os = "windows")]
@@ -203,9 +203,9 @@ pub trait EventLoopBuilderExtWindows {
     ///
     /// ```
     /// # use windows_sys::Win32::UI::WindowsAndMessaging::{ACCEL, CreateAcceleratorTableW, TranslateAcceleratorW, DispatchMessageW, TranslateMessage, MSG};
-    /// use winit::event_loop::EventLoopBuilder;
+    /// use deft_winit::event_loop::EventLoopBuilder;
     /// #[cfg(target_os = "windows")]
-    /// use winit::platform::windows::EventLoopBuilderExtWindows;
+    /// use deft_winit::platform::windows::EventLoopBuilderExtWindows;
     ///
     /// let mut builder = EventLoopBuilder::new();
     /// #[cfg(target_os = "windows")]
@@ -334,11 +334,11 @@ pub trait WindowExtWindows {
     /// ## Example
     ///
     /// ```no_run
-    /// # use winit::window::Window;
+    /// # use deft_winit::window::Window;
     /// # fn scope(window: Window) {
     /// use std::thread;
-    /// use winit::platform::windows::WindowExtWindows;
-    /// use winit::raw_window_handle::HasWindowHandle;
+    /// use deft_winit::platform::windows::WindowExtWindows;
+    /// use deft_winit::raw_window_handle::HasWindowHandle;
     ///
     /// // We can get the window handle on the current thread.
     /// let handle = window.window_handle().unwrap();
