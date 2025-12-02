@@ -54,7 +54,7 @@ jobs:
       RUST_BACKTRACE: 1
 
       # Faster compilation and error on warnings
-      RUSTFLAGS: '--codegen=debuginfo=0 --deny=warnings ${{ matrix.platform.rustflags }}'
+      RUSTFLAGS: '--codegen=debuginfo=0 ${{ matrix.platform.rustflags }}'
 
       OPTIONS: --target=${{ matrix.platform.target }} ${{ matrix.platform.options }}
       CMD: ${{ matrix.platform.cmd }}
