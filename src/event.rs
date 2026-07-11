@@ -103,6 +103,13 @@ pub enum Event<T: 'static> {
     ///
     /// [`ApplicationHandler::memory_warning`]: crate::application::ApplicationHandler::memory_warning
     MemoryWarning,
+
+    /// See [`ApplicationHandler::reopen`] for details.
+    ///
+    /// [`ApplicationHandler::reopen`]: crate::application::ApplicationHandler::reopen
+    Reopen {
+        has_visible: bool,
+    },
 }
 
 impl<T> Event<T> {
@@ -119,6 +126,7 @@ impl<T> Event<T> {
             Suspended => Ok(Suspended),
             Resumed => Ok(Resumed),
             MemoryWarning => Ok(MemoryWarning),
+            Reopen { has_visible } => Ok(Reopen { has_visible })
         }
     }
 }

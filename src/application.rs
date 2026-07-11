@@ -222,6 +222,11 @@ pub trait ApplicationHandler<T: 'static = ()> {
     fn memory_warning(&mut self, event_loop: &ActiveEventLoop) {
         let _ = event_loop;
     }
+    
+    fn reopen(&mut self, event_loop: &ActiveEventLoop, has_visible: bool) {
+        let _ = (event_loop, has_visible);
+    }
+    
 }
 
 impl<A: ?Sized + ApplicationHandler<T>, T: 'static> ApplicationHandler<T> for &mut A {

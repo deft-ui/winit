@@ -652,5 +652,6 @@ pub(crate) fn dispatch_event_for_app<T: 'static, A: ApplicationHandler<T>>(
         Event::AboutToWait => app.about_to_wait(event_loop),
         Event::LoopExiting => app.exiting(event_loop),
         Event::MemoryWarning => app.memory_warning(event_loop),
+        Event::Reopen { has_visible} => app.reopen(event_loop, has_visible),
     }
 }

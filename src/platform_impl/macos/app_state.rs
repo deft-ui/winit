@@ -70,6 +70,16 @@ declare_class!(
         fn app_will_terminate(&self, notification: &NSNotification) {
             self.will_terminate(notification)
         }
+
+        #[method(applicationShouldHandleReopen:hasVisibleWindows:)]
+        unsafe fn applicationShouldHandleReopen_hasVisibleWindows(
+            &self,
+            _sender: &NSApplication,
+            flag: bool,
+        ) -> bool {
+            self.handle_reopen(flag)
+        }
+
     }
 );
 
@@ -167,6 +177,13 @@ impl ApplicationDelegate {
         trace_scope!("applicationWillTerminate:");
         // TODO: Notify every window that it will be destroyed, like done in iOS?
         self.internal_exit();
+    }
+
+    fn handle_reopen(&self, flag: bool) -> bool {
+        self.handle_event(Event::Reopen {
+            has_visible: flag,
+        });
+        false
     }
 
     pub fn get(mtm: MainThreadMarker) -> Retained<Self> {
